@@ -36,9 +36,9 @@ func getBatch(n int64, pool int64) (res []user) {
 
 func worker(id int, input <-chan int64, output chan<- user, mutex *sync.Mutex) {
 	for id := range input {
-		mutex.Lock()
 		user := getOne(id)
-		mutex.Unlock()
+		mutex.Lock()
 		output <- user
+		mutex.Unlock()
 	}
 }
