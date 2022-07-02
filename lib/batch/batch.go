@@ -1,6 +1,7 @@
 package batch
 
 import (
+	"sync"
 	"time"
 )
 
@@ -14,5 +15,30 @@ func getOne(id int64) user {
 }
 
 func getBatch(n int64, pool int64) (res []user) {
-	return nil
+	input, output, mutex := make(chan int64), make(chan user), new(sync.Mutex)
+
+	for i := int64(0); i < pool; i++ {
+		go worker(1, input, output, mutex)
+	}
+
+	go func(n int64, input chan<- int64) {
+		for i := int64(0); i < n; i++ {
+			input <- i
+		}
+		close(input)
+	}(n, input)
+
+	for i := int64(0); i < n; i++ {
+		res = append(res, <-output)
+	}
+	return
+}
+
+func worker(id int, input <-chan int64, output chan<- user, mutex *sync.Mutex) {
+	for id := range input {
+		mutex.Lock()
+		user := getOne(id)
+		mutex.Unlock()
+		output <- user
+	}
 }
